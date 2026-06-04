@@ -208,6 +208,36 @@
 
   .pts-tag{background:var(--bg);color:var(--dorado);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:4px;}
   .psub-bracket{color:var(--txt3);font-size:12px;line-height:1.55;margin-bottom:16px;}
+  /* BANNER HOY JUEGAN */
+  .banner{
+    background:linear-gradient(135deg,#1e2750,#26305f);
+    border:1px solid var(--dorado);border-radius:var(--radio);
+    padding:14px 16px;margin-bottom:16px;position:relative;overflow:hidden;
+  }
+  .banner::before{
+    content:"";position:absolute;top:0;left:0;width:4px;height:100%;background:var(--grad-dorado);
+  }
+  .banner-head{display:flex;align-items:center;gap:7px;margin-bottom:10px;}
+  .banner-head .vivo{
+    background:var(--rosa);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;
+    letter-spacing:0.5px;animation:pulso 1.8s ease-in-out infinite;
+  }
+  @keyframes pulso{0%,100%{opacity:1;}50%{opacity:0.5;}}
+  .banner-head .titulo{font-size:13px;font-weight:700;color:var(--dorado);letter-spacing:0.3px;}
+  .banner-fecha{font-size:11px;color:var(--txt3);font-weight:500;margin-left:auto;}
+  .banner-partido{
+    display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px;font-weight:600;
+    border-top:1px solid var(--linea-suave);
+  }
+  .banner-partido:first-of-type{border-top:none;}
+  .banner-partido img{width:26px;height:17px;object-fit:cover;border-radius:3px;flex-shrink:0;}
+  .banner-partido .hora{margin-left:auto;font-size:11px;color:var(--verde);font-weight:700;}
+  .banner-partido .hora.cerr{color:var(--rosa);}
+  .banner-vs{color:var(--txt3);font-size:11px;font-weight:500;}
+  .banner-destacado{color:var(--dorado);}
+  .banner-nada{font-size:13px;color:var(--txt2);}
+  .banner-prox{font-size:12px;color:var(--txt3);margin-top:8px;padding-top:8px;border-top:1px solid var(--linea-suave);}
+  .banner-prox strong{color:var(--verde);}
   .llave-fase{margin-bottom:20px;}
   .llave-cruce{
     background:var(--bg-card);border:1px solid var(--linea);border-radius:var(--radio-sm);
@@ -264,6 +294,7 @@
   <main>
     <!-- VISTA FIXTURE -->
     <div class="vista activa" id="vista-fixture">
+      <div id="banner-hoy"></div>
       <div class="controles">
         <select id="filtro-grupo"><option value="todos">Todos los grupos</option></select>
         <select id="filtro-estado">
@@ -724,6 +755,54 @@ function compartirProde(){
 }
 
 
+// BANNER "HOY JUEGAN"
+function renderBanner(){
+  const cont=document.getElementById('banner-hoy');
+  if(!cont)return;
+  const ahora=new Date();
+  const hoyAR=ahora.toLocaleDateString('en-CA',{timeZone:'America/Argentina/Buenos_Aires'});
+
+  const deHoy=PARTIDOS.filter(p=>{
+    const dia=estado[p.id].inicio.toLocaleDateString('en-CA',{timeZone:'America/Argentina/Buenos_Aires'});
+    return dia===hoyAR;
+  });
+
+  const futuros=PARTIDOS.filter(p=>estado[p.id].inicio>ahora).sort((a,b)=>estado[a.id].inicio-estado[b.id].inicio);
+  const prox=futuros[0];
+
+  let html='';
+  if(deHoy.length>0){
+    html+='<div class="banner"><div class="banner-head"><span class="vivo">HOY</span><span class="titulo">⚽ Hoy se juega</span><span class="banner-fecha">'+deHoy.length+(deHoy.length===1?' partido':' partidos')+'</span></div>';
+    deHoy.forEach(p=>{
+      const e=estado[p.id];
+      const cerr=cerrado(p);
+      const hora=e.inicio.toLocaleString('es-AR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Argentina/Buenos_Aires'});
+      const dest=p.destacado?' banner-destacado':'';
+      html+=`<div class="banner-partido${dest}">
+        <img src="${flagUrl(p.local)}" alt="${p.local}">
+        <span>${p.local}</span><span class="banner-vs">vs</span><span>${p.visitante}</span>
+        <img src="${flagUrl(p.visitante)}" alt="${p.visitante}">
+        <span class="hora ${cerr?'cerr':''}">${cerr?'🔒':hora+' hs'}</span>
+      </div>`;
+    });
+    html+='</div>';
+  } else if(prox){
+    const e=estado[prox.id];
+    const dias=Math.ceil((e.inicio-ahora)/(1000*60*60*24));
+    const fechaProx=e.inicio.toLocaleString('es-AR',{weekday:'long',day:'2-digit',month:'long',timeZone:'America/Argentina/Buenos_Aires'});
+    html+=`<div class="banner"><div class="banner-head"><span class="titulo">⏳ Próximo partido</span></div>
+      <div class="banner-partido${prox.destacado?' banner-destacado':''}">
+        <img src="${flagUrl(prox.local)}" alt="${prox.local}">
+        <span>${prox.local}</span><span class="banner-vs">vs</span><span>${prox.visitante}</span>
+        <img src="${flagUrl(prox.visitante)}" alt="${prox.visitante}">
+      </div>
+      <div class="banner-prox">${fechaProx} · faltan <strong>${dias} ${dias===1?'día':'días'}</strong></div>
+    </div>`;
+  }
+  cont.innerHTML=html;
+}
+
+renderBanner();
 renderFixture();
 renderElimina();
 initEspeciales();
