@@ -255,6 +255,7 @@
     .marcador input{width:44px;height:48px;font-size:21px;}
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="wrap">
@@ -400,6 +401,17 @@
 </div>
 
 <script>
+// ===== CONEXIÓN A SUPABASE =====
+const SUPABASE_URL = "https://vkqgtsecprpmcbahscti.supabase.co";
+const SUPABASE_KEY = "sb_publishable_CH8Y6uF261ETfw7XCcRevw_qNUUDxxZ";
+let sb = null;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch(err) {
+  console.warn("Supabase no disponible, usando solo modo local:", err);
+}
+let jugadorId = null; // id del jugador en la base de datos
+
 const PARTIDOS = [
   // FECHA 1
   {id:1, fecha:1, grupo:"A", local:"México", visitante:"Sudáfrica", bl:"🇲🇽", bv:"🇿🇦", sede:"Ciudad de México", inicio:"2026-06-11T19:00:00-03:00", destacado:true},
@@ -612,6 +624,9 @@ function renderFixture(){
       estado[id][lado==='L'?'predL':'predV']=val===""?"":String(val);
       ev.target.classList.toggle('lleno',val!=="");
       actualizarStats();guardar();
+      // guardar en la nube con un pequeño retraso
+      clearTimeout(window._guardarNubeTimer);
+      window._guardarNubeTimer=setTimeout(()=>{guardarPrediccionNube(id);},800);
     });
   });
 }
@@ -802,12 +817,112 @@ function renderBanner(){
   cont.innerHTML=html;
 }
 
+// ===== FUNCIONES DE SUPABASE (NUBE) =====
+
+// Calcula mis puntos totales actuales
+function misPuntosTotales(){
+  let total=0;
+  PARTIDOS.forEach(p=>{const pj=puntosDe(estado[p.id]);if(pj!==null)total+=pj;});
+  return total;
+}
+
+// Registra o recupera al jugador en la base de datos
+async function iniciarJugador(){
+  if(!sb) return; // si no hay conexión, sigue en modo local
+  // ver si ya tengo un id guardado en este navegador
+  jugadorId = localStorage.getItem(STORAGE_KEY+"_jid");
+  const nombreGuardado = localStorage.getItem(STORAGE_KEY+"_nombre");
+
+  if(jugadorId && nombreGuardado){
+    // ya estoy registrado, no hago nada
+    return;
+  }
+  // pedir nombre la primera vez
+  let nombre = prompt("¡Bienvenido al Prode Mundial 2026! 🏆\n\n¿Con qué nombre querés jugar? (lo verán tus rivales en la tabla)");
+  if(!nombre || !nombre.trim()){ nombre = "Jugador anónimo"; }
+  nombre = nombre.trim().slice(0,30);
+
+  try{
+    const {data,error} = await sb.from('jugadores').insert({nombre}).select().single();
+    if(error) throw error;
+    jugadorId = data.id;
+    localStorage.setItem(STORAGE_KEY+"_jid", jugadorId);
+    localStorage.setItem(STORAGE_KEY+"_nombre", nombre);
+    // autocompletar el nombre en la pestaña duelos
+    const inp=document.getElementById('tu-nombre');
+    if(inp) inp.value=nombre;
+  }catch(err){
+    console.warn("No se pudo registrar el jugador:", err);
+  }
+}
+
+// Guarda una predicción en la nube
+async function guardarPrediccionNube(partidoId){
+  if(!sb || !jugadorId) return;
+  const e=estado[partidoId];
+  if(e.predL==="" || e.predV==="") return;
+  try{
+    await sb.from('predicciones').upsert({
+      jugador_id: jugadorId,
+      partido_id: parseInt(partidoId),
+      goles_local: parseInt(e.predL),
+      goles_visitante: parseInt(e.predV)
+    }, {onConflict:'jugador_id,partido_id'});
+  }catch(err){
+    console.warn("No se pudo guardar en la nube:", err);
+  }
+}
+
+// Sincroniza mis puntos y trae la tabla real de todos los jugadores
+async function cargarRankingNube(){
+  if(!sb){ renderRanking(); return; } // sin conexión, usa el de ejemplo
+  try{
+    // traer todos los jugadores
+    const {data:jugadores,error} = await sb.from('jugadores').select('id,nombre');
+    if(error) throw error;
+    // traer todas las predicciones
+    const {data:preds} = await sb.from('predicciones').select('jugador_id,partido_id,goles_local,goles_visitante');
+
+    // calcular puntos de cada jugador comparando con resultados reales que tengo cargados
+    const tabla = jugadores.map(j=>{
+      let pts=0;
+      (preds||[]).filter(pr=>pr.jugador_id===j.id).forEach(pr=>{
+        const e=estado[pr.partido_id];
+        if(!e || e.realL===null) return;
+        if(pr.goles_local===e.realL && pr.goles_visitante===e.realV) pts+=5;
+        else if(Math.sign(pr.goles_local-pr.goles_visitante)===Math.sign(e.realL-e.realV)) pts+=2;
+      });
+      return {nombre:j.nombre, pts, yo:(j.id===jugadorId)};
+    }).sort((a,b)=>b.pts-a.pts);
+
+    // si solo estoy yo, igual muestro mi fila
+    const cont=document.getElementById('lista-ranking');
+    if(tabla.length===0){ renderRanking(); return; }
+    cont.innerHTML='';
+    tabla.forEach((j,i)=>{
+      const row=document.createElement('div');
+      row.className='rank-row'+(j.yo?' yo':'');
+      row.innerHTML=`<span class="rank-pos">${i+1}</span><span class="rank-nombre">${j.nombre}${j.yo?' (vos)':''}</span><span class="rank-pts">${j.pts}</span>`;
+      cont.appendChild(row);
+    });
+  }catch(err){
+    console.warn("No se pudo cargar el ranking de la nube:", err);
+    renderRanking();
+  }
+}
+
 renderBanner();
 renderFixture();
 renderElimina();
 initEspeciales();
 actualizarStats();
 renderRanking();
+
+// arrancar la conexión con la nube
+(async ()=>{
+  await iniciarJugador();
+  await cargarRankingNube();
+})();
 
 if("serviceWorker" in navigator){
   window.addEventListener("load",()=>{
