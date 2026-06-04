@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <meta name="theme-color" content="#10162e">
 <meta name="description" content="Prode del Mundial 2026: cargá tus pronósticos, sumá puntos y desafiá a tus amigos.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prode 26">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%2310162e'/%3E%3Cpath d='M66 39 L114 39 L108 81 Q90 105 72 81 Z' fill='%23ffce4e'/%3E%3Crect x='82' y='102' width='16' height='27' fill='%23ffce4e'/%3E%3Crect x='66' y='129' width='48' height='12' rx='4' fill='%23ffce4e'/%3E%3Crect x='60' y='141' width='60' height='10' rx='4' fill='%2300e0a4'/%3E%3C/svg%3E">
 <title>Prode Mundial 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -191,6 +197,20 @@
   .vista.activa{display:block;animation:fade 0.25s ease;}
   @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
+  .pts-tag{background:var(--bg);color:var(--dorado);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:4px;}
+  .psub-bracket{color:var(--txt3);font-size:12px;line-height:1.55;margin-bottom:16px;}
+  .llave-fase{margin-bottom:20px;}
+  .llave-cruce{
+    background:var(--bg-card);border:1px solid var(--linea);border-radius:var(--radio-sm);
+    padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+  .llave-cruce .equipos-llave{display:flex;flex-direction:column;gap:6px;flex:1;}
+  .llave-team{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--txt2);}
+  .llave-team .mini{width:24px;height:16px;background:var(--bg2);border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:var(--txt3);font-weight:700;border:1px solid var(--linea);}
+  .llave-mult{font-size:10px;font-weight:700;color:var(--dorado);background:var(--bg);padding:3px 9px;border-radius:8px;white-space:nowrap;}
+  .esp-ok{background:rgba(0,224,164,0.12);border:1px solid var(--verde);border-radius:var(--radio-sm);padding:12px;margin-top:14px;text-align:center;color:var(--verde);font-size:13px;font-weight:600;}
+  .btn-compartir{background:var(--bg2);color:var(--txt);border:1px solid var(--linea);margin-top:10px;}
+
   @media(min-width:480px){
     .equipo .bandera{width:68px;height:45px;}
     .marcador input{width:44px;height:48px;font-size:21px;}
@@ -248,6 +268,40 @@
         <button class="btn btn-sec" id="btn-simular" style="flex:1;"><i class="ti ti-dice-5"></i> Simular</button>
         <button class="btn btn-sec" id="btn-reset" style="flex:1;"><i class="ti ti-refresh"></i> Reiniciar</button>
       </div>
+      <button class="btn btn-compartir" id="btn-compartir" style="margin-top:10px;"><i class="ti ti-brand-whatsapp" style="font-size:18px"></i> Compartir mi prode</button>
+    </div>
+
+    <!-- VISTA ELIMINATORIAS -->
+    <div class="vista" id="vista-elimina">
+      <div class="seccion-tit"><div class="barra"></div><span>FASE ELIMINATORIA · LOS PUNTOS VALEN MÁS</span></div>
+      <p class="psub-bracket">Octavos ×2 · Cuartos ×3 · Semis ×4 · Final ×5. Los cruces se completan cuando termine la fase de grupos. Por ahora podés ver la estructura del cuadro.</p>
+      <div id="lista-elimina"></div>
+    </div>
+
+    <!-- VISTA ESPECIALES -->
+    <div class="vista" id="vista-especiales">
+      <div class="panel">
+        <h2>Predicciones especiales</h2>
+        <p class="psub">Pronósticos de todo el torneo. Cargalos cuanto antes: ¡valen muchos puntos si acertás!</p>
+        <div class="campo">
+          <label for="pred-campeon"><i class="ti ti-trophy" style="vertical-align:-2px;color:var(--dorado)"></i> ¿Quién sale campeón? <span class="pts-tag">+15 pts</span></label>
+          <select id="pred-campeon"><option value="">Elegí una selección...</option></select>
+        </div>
+        <div class="campo">
+          <label for="pred-subcampeon"><i class="ti ti-medal-2" style="vertical-align:-2px;color:var(--txt2)"></i> ¿Subcampeón? <span class="pts-tag">+8 pts</span></label>
+          <select id="pred-subcampeon"><option value="">Elegí una selección...</option></select>
+        </div>
+        <div class="campo">
+          <label for="pred-goleador"><i class="ti ti-ball-football" style="vertical-align:-2px;color:var(--verde)"></i> Goleador del Mundial <span class="pts-tag">+10 pts</span></label>
+          <input type="text" id="pred-goleador" placeholder="Ej: Lionel Messi">
+        </div>
+        <div class="campo">
+          <label for="pred-mejor"><i class="ti ti-star" style="vertical-align:-2px;color:var(--azul)"></i> Mejor jugador (Balón de Oro) <span class="pts-tag">+10 pts</span></label>
+          <input type="text" id="pred-mejor" placeholder="Ej: Lamine Yamal">
+        </div>
+        <button class="btn btn-grad" id="btn-guardar-esp"><i class="ti ti-device-floppy"></i> Guardar predicciones</button>
+        <div id="esp-guardado"></div>
+      </div>
     </div>
 
     <!-- VISTA DUELO -->
@@ -296,7 +350,9 @@
   </main>
 
   <nav>
-    <button class="nav-btn activo" data-vista="fixture"><i class="ti ti-ball-football ico"></i><span class="lbl">Fixture</span></button>
+    <button class="nav-btn activo" data-vista="fixture"><i class="ti ti-ball-football ico"></i><span class="lbl">Grupos</span></button>
+    <button class="nav-btn" data-vista="elimina"><i class="ti ti-tournament ico"></i><span class="lbl">Llaves</span></button>
+    <button class="nav-btn" data-vista="especiales"><i class="ti ti-star ico"></i><span class="lbl">Especiales</span></button>
     <button class="nav-btn" data-vista="duelo"><i class="ti ti-swords ico"></i><span class="lbl">Duelos</span></button>
     <button class="nav-btn" data-vista="ranking"><i class="ti ti-trophy ico"></i><span class="lbl">Tabla</span></button>
   </nav>
@@ -385,9 +441,19 @@ const PARTIDOS = [
 const ISO={"Alemania":"de","Arabia Saudita":"sa","Argelia":"dz","Argentina":"ar","Australia":"au","Austria":"at","Bosnia y H.":"ba","Brasil":"br","Bélgica":"be","Cabo Verde":"cv","Canadá":"ca","Colombia":"co","Corea del Sur":"kr","Costa de Marfil":"ci","Croacia":"hr","Curazao":"cw","Ecuador":"ec","Egipto":"eg","Escocia":"gb-sct","España":"es","Estados Unidos":"us","Francia":"fr","Ghana":"gh","Haití":"ht","Inglaterra":"gb-eng","Irak":"iq","Irán":"ir","Japón":"jp","Jordania":"jo","Marruecos":"ma","México":"mx","Noruega":"no","Nueva Zelanda":"nz","Panamá":"pa","Paraguay":"py","Países Bajos":"nl","Portugal":"pt","Qatar":"qa","RD Congo":"cd","Rep. Checa":"cz","Senegal":"sn","Sudáfrica":"za","Suecia":"se","Suiza":"ch","Turquía":"tr","Túnez":"tn","Uruguay":"uy","Uzbekistán":"uz"};
 function flagUrl(pais){const c=ISO[pais]||"un";return "https://flagcdn.com/w160/"+c+".png";}
 const NOMBRES_FECHA = {1:"Fecha 1 — Debut de todos", 2:"Fecha 2", 3:"Fecha 3 — Cierre de grupos"};
+
+const ELIMINATORIAS = [
+  {fase:"Octavos de final", mult:2, cruces:["1°A vs 3°C/D/F","1°C vs 2°F","1°E vs 2°D","1°G vs 3°A/B/F","1°D vs 3°B/E/F","1°B vs 3°A/C/D","1°F vs 2°E","1°H vs 2°G","2°A vs 2°C","1°I vs 3°C/E/H","1°J vs 2°H","1°K vs 3°D/E/I/J","1°L vs 2°J","2°I vs 2°L","1°? vs 2°K","2°B vs 2°H"]},
+  {fase:"Cuartos de final", mult:3, cruces:["Ganador O1 vs Ganador O2","Ganador O3 vs Ganador O4","Ganador O5 vs Ganador O6","Ganador O7 vs Ganador O8"]},
+  {fase:"Semifinales", mult:4, cruces:["Ganador C1 vs Ganador C2","Ganador C3 vs Ganador C4"]},
+  {fase:"Final", mult:5, cruces:["Ganador S1 vs Ganador S2"]},
+];
+
+const PAISES_CAMPEON = ["Alemania","Arabia Saudita","Argelia","Argentina","Australia","Austria","Bosnia y H.","Brasil","Bélgica","Cabo Verde","Canadá","Colombia","Corea del Sur","Costa de Marfil","Croacia","Curazao","Ecuador","Egipto","Escocia","España","Estados Unidos","Francia","Ghana","Haití","Inglaterra","Irak","Irán","Japón","Jordania","Marruecos","México","Noruega","Nueva Zelanda","Panamá","Paraguay","Países Bajos","Portugal","Qatar","RD Congo","Rep. Checa","Senegal","Sudáfrica","Suecia","Suiza","Turquía","Túnez","Uruguay","Uzbekistán"];
 const STORAGE_KEY = "prodeMundial2026_v2";
 
 let estado = {};
+let especiales = {campeon:"",subcampeon:"",goleador:"",mejor:""};
 function inicializarEstado(){
   estado={};
   PARTIDOS.forEach(p=>{
@@ -400,14 +466,17 @@ inicializarEstado();
 function guardar(){
   const data={};
   PARTIDOS.forEach(p=>{const e=estado[p.id];data[p.id]={predL:e.predL,predV:e.predV,realL:e.realL,realV:e.realV};});
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}catch(err){}
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY+"_esp",JSON.stringify(especiales));
+  }catch(err){}
 }
 function cargar(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY);
-    if(!raw)return;
-    const data=JSON.parse(raw);
-    Object.keys(data).forEach(id=>{if(estado[id])Object.assign(estado[id],data[id]);});
+    if(raw){const data=JSON.parse(raw);Object.keys(data).forEach(id=>{if(estado[id])Object.assign(estado[id],data[id]);});}
+    const rawEsp=localStorage.getItem(STORAGE_KEY+"_esp");
+    if(rawEsp){especiales=Object.assign(especiales,JSON.parse(rawEsp));}
   }catch(err){}
 }
 
@@ -581,10 +650,82 @@ function renderRanking(){
   });
 }
 
-cargar();
+// ELIMINATORIAS
+function renderElimina(){
+  const cont=document.getElementById('lista-elimina');
+  cont.innerHTML='';
+  ELIMINATORIAS.forEach((fase,fi)=>{
+    const bloque=document.createElement('div');
+    bloque.className='llave-fase';
+    const prefijo=fase.fase[0]==='O'?'O':fase.fase[0]==='C'?'C':fase.fase[0]==='S'?'S':'F';
+    let cruces='';
+    fase.cruces.forEach((c,i)=>{
+      const partes=c.split(' vs ');
+      cruces+=`
+        <div class="llave-cruce">
+          <div class="equipos-llave">
+            <div class="llave-team"><span class="mini">?</span> ${partes[0]}</div>
+            <div class="llave-team"><span class="mini">?</span> ${partes[1]||''}</div>
+          </div>
+          <span class="llave-mult">×${fase.mult}</span>
+        </div>`;
+    });
+    bloque.innerHTML=`<div class="seccion-tit"><div class="barra"></div><span>${fase.fase.toUpperCase()} · PUNTOS ×${fase.mult}</span></div>${cruces}`;
+    cont.appendChild(bloque);
+  });
+}
+
+// ESPECIALES
+function initEspeciales(){
+  const selC=document.getElementById('pred-campeon');
+  const selS=document.getElementById('pred-subcampeon');
+  PAISES_CAMPEON.forEach(p=>{
+    selC.appendChild(new Option(p,p));
+    selS.appendChild(new Option(p,p));
+  });
+  selC.value=especiales.campeon;
+  selS.value=especiales.subcampeon;
+  document.getElementById('pred-goleador').value=especiales.goleador;
+  document.getElementById('pred-mejor').value=especiales.mejor;
+}
+document.getElementById('btn-guardar-esp').addEventListener('click',()=>{
+  especiales.campeon=document.getElementById('pred-campeon').value;
+  especiales.subcampeon=document.getElementById('pred-subcampeon').value;
+  especiales.goleador=document.getElementById('pred-goleador').value.trim();
+  especiales.mejor=document.getElementById('pred-mejor').value.trim();
+  guardar();
+  const cont=document.getElementById('esp-guardado');
+  cont.innerHTML='<div class="esp-ok"><i class="ti ti-circle-check" style="vertical-align:-2px"></i> ¡Predicciones guardadas!</div>';
+  setTimeout(()=>{cont.innerHTML='';},2500);
+});
+
+document.getElementById('btn-compartir').addEventListener('click',compartirProde);
+
+// COMPARTIR (texto resumen del prode)
+function compartirProde(){
+  let pts=document.getElementById('s-puntos').textContent;
+  let car=document.getElementById('s-cargados').textContent;
+  let txt=`⚽ Mi Prode Mundial 2026 ⚽\n\n`;
+  txt+=`📊 ${pts} puntos · ${car} partidos cargados\n`;
+  if(especiales.campeon)txt+=`🏆 Mi campeón: ${especiales.campeon}\n`;
+  if(especiales.goleador)txt+=`⚽ Goleador: ${especiales.goleador}\n`;
+  txt+=`\n¡Sumate y armá tu prode!`;
+  const url="https://wa.me/?text="+encodeURIComponent(txt);
+  window.open(url,'_blank');
+}
+
+
 renderFixture();
+renderElimina();
+initEspeciales();
 actualizarStats();
 renderRanking();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
