@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.34.1/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.1/dist/tabler-icons.min.css">
 <style>
   :root{
     --bg:#141b38;
@@ -207,6 +207,24 @@
   @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
   .pts-tag{background:var(--bg);color:var(--dorado);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:4px;}
+  /* LOGROS */
+  .logros-progreso{margin-bottom:18px;}
+  .logros-barra-bg{background:var(--bg);border-radius:20px;height:12px;overflow:hidden;border:1px solid var(--linea);}
+  .logros-barra-fill{height:100%;background:var(--grad-dorado);border-radius:20px;transition:width 0.5s ease;}
+  .logros-progreso .txt{font-size:12px;color:var(--txt2);margin-top:7px;font-weight:600;text-align:center;}
+  .logros-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .logro{
+    background:var(--bg);border:1px solid var(--linea);border-radius:var(--radio);padding:14px 12px;
+    text-align:center;transition:all 0.2s;position:relative;
+  }
+  .logro.desbloqueado{border-color:var(--dorado);background:linear-gradient(160deg,rgba(255,196,61,0.12),var(--bg));}
+  .logro .emoji{font-size:34px;line-height:1;filter:grayscale(1) opacity(0.35);transition:filter 0.3s;}
+  .logro.desbloqueado .emoji{filter:none;}
+  .logro .l-tit{font-size:13px;font-weight:700;margin-top:8px;color:var(--txt3);}
+  .logro.desbloqueado .l-tit{color:var(--txt);}
+  .logro .l-desc{font-size:10px;color:var(--txt3);margin-top:4px;line-height:1.35;}
+  .logro .check{position:absolute;top:8px;right:8px;color:var(--dorado);font-size:16px;display:none;}
+  .logro.desbloqueado .check{display:block;}
   .psub-bracket{color:var(--txt3);font-size:12px;line-height:1.55;margin-bottom:16px;}
   /* BANNER HOY JUEGAN */
   .banner{
@@ -345,6 +363,16 @@
       </div>
     </div>
 
+    <!-- VISTA LOGROS -->
+    <div class="vista" id="vista-logros">
+      <div class="panel">
+        <h2>Tus logros</h2>
+        <p class="psub">Medallas que vas desbloqueando por tu juego. ¡A completarlas todas!</p>
+        <div class="logros-progreso" id="logros-progreso"></div>
+        <div class="logros-grid" id="logros-grid"></div>
+      </div>
+    </div>
+
     <!-- VISTA DUELO -->
     <div class="vista" id="vista-duelo">
       <div class="panel">
@@ -394,6 +422,7 @@
     <button class="nav-btn activo" data-vista="fixture"><i class="ti ti-ball-football ico"></i><span class="lbl">Grupos</span></button>
     <button class="nav-btn" data-vista="elimina"><i class="ti ti-tournament ico"></i><span class="lbl">Llaves</span></button>
     <button class="nav-btn" data-vista="especiales"><i class="ti ti-star ico"></i><span class="lbl">Especiales</span></button>
+    <button class="nav-btn" data-vista="logros"><i class="ti ti-medal ico"></i><span class="lbl">Logros</span></button>
     <button class="nav-btn" data-vista="duelo"><i class="ti ti-swords ico"></i><span class="lbl">Duelos</span></button>
     <button class="nav-btn" data-vista="ranking"><i class="ti ti-trophy ico"></i><span class="lbl">Tabla</span></button>
   </nav>
@@ -406,7 +435,9 @@ const SUPABASE_URL = "https://vkqgtsecprpmcbahscti.supabase.co";
 const SUPABASE_KEY = "sb_publishable_CH8Y6uF261ETfw7XCcRevw_qNUUDxxZ";
 let sb = null;
 try {
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // la librería del CDN expone un global llamado "supabase"; extraemos createClient
+  const { createClient } = supabase;
+  sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 } catch(err) {
   console.warn("Supabase no disponible, usando solo modo local:", err);
 }
@@ -502,6 +533,21 @@ const ELIMINATORIAS = [
 ];
 
 const PAISES_CAMPEON = ["Alemania","Arabia Saudita","Argelia","Argentina","Australia","Austria","Bosnia y H.","Brasil","Bélgica","Cabo Verde","Canadá","Colombia","Corea del Sur","Costa de Marfil","Croacia","Curazao","Ecuador","Egipto","Escocia","España","Estados Unidos","Francia","Ghana","Haití","Inglaterra","Irak","Irán","Japón","Jordania","Marruecos","México","Noruega","Nueva Zelanda","Panamá","Paraguay","Países Bajos","Portugal","Qatar","RD Congo","Rep. Checa","Senegal","Sudáfrica","Suecia","Suiza","Turquía","Túnez","Uruguay","Uzbekistán"];
+
+// Selecciones consideradas "grandes" (para el logro mata gigantes)
+const EQUIPOS_GRANDES = ["Argentina","Brasil","Francia","España","Inglaterra","Alemania","Portugal","Países Bajos","Bélgica","Uruguay"];
+
+// Catálogo de logros (se miden sobre el juego personal)
+const LOGROS = [
+  {id:"primer_acierto", emoji:"🎯", titulo:"Primer acierto", desc:"Acertaste tu primer pronóstico"},
+  {id:"exacto", emoji:"💯", titulo:"Pálpito perfecto", desc:"Acertaste un resultado exacto"},
+  {id:"racha3", emoji:"🔥", titulo:"En racha", desc:"3 aciertos seguidos"},
+  {id:"hincha", emoji:"🇦🇷", titulo:"Hincha fiel", desc:"Cargaste los 3 partidos de Argentina"},
+  {id:"fecha_completa", emoji:"📋", titulo:"Fecha completa", desc:"Cargaste los 24 partidos de una fecha"},
+  {id:"vidente", emoji:"🏆", titulo:"Vidente", desc:"Elegiste tu campeón del Mundial"},
+  {id:"diez", emoji:"⚡", titulo:"Apostador", desc:"Cargaste 10 partidos"},
+  {id:"matagigantes", emoji:"🐂", titulo:"Mata gigantes", desc:"Acertaste el batacazo de un chico ante un grande"},
+];
 const STORAGE_KEY = "prodeMundial2026_v2";
 
 let estado = {};
@@ -555,6 +601,7 @@ function actualizarStats(){
   document.getElementById('s-puntos').textContent=pts;
   document.getElementById('s-aciertos').textContent=ac;
   document.getElementById('s-cargados').textContent=car;
+  if(typeof renderLogros==='function') renderLogros();
 }
 
 let fGrupo="todos",fEstado="todos";
@@ -749,6 +796,7 @@ document.getElementById('btn-guardar-esp').addEventListener('click',()=>{
   especiales.goleador=document.getElementById('pred-goleador').value.trim();
   especiales.mejor=document.getElementById('pred-mejor').value.trim();
   guardar();
+  renderLogros();
   const cont=document.getElementById('esp-guardado');
   cont.innerHTML='<div class="esp-ok"><i class="ti ti-circle-check" style="vertical-align:-2px"></i> ¡Predicciones guardadas!</div>';
   setTimeout(()=>{cont.innerHTML='';},2500);
@@ -852,7 +900,7 @@ async function iniciarJugador(){
     const inp=document.getElementById('tu-nombre');
     if(inp) inp.value=nombre;
   }catch(err){
-    console.warn("No se pudo registrar el jugador:", err);
+    console.warn("No se pudo registrar el jugador:", err.message || JSON.stringify(err));
   }
 }
 
@@ -906,15 +954,88 @@ async function cargarRankingNube(){
       cont.appendChild(row);
     });
   }catch(err){
-    console.warn("No se pudo cargar el ranking de la nube:", err);
+    console.warn("No se pudo cargar el ranking de la nube:", err.message || JSON.stringify(err));
     renderRanking();
   }
+}
+
+// ===== LOGROS =====
+function calcularLogros(){
+  const conseguidos = new Set();
+  let cargados=0, aciertos=0, exactos=0, rachaMax=0, rachaActual=0;
+  let argCargados=0;
+  const porFecha={1:0,2:0,3:0};
+
+  // recorrer partidos en orden para la racha
+  PARTIDOS.forEach(p=>{
+    const e=estado[p.id];
+    const cargado = e.predL!=="" && e.predV!=="";
+    if(cargado){
+      cargados++;
+      porFecha[p.fecha]++;
+      if(p.local==="Argentina"||p.visitante==="Argentina") argCargados++;
+    }
+    const pj=puntosDe(e);
+    if(pj!==null){
+      if(pj>0){
+        aciertos++;
+        rachaActual++;
+        if(rachaActual>rachaMax) rachaMax=rachaActual;
+        if(pj===5) exactos++;
+        // mata gigantes: un equipo grande perdió o empató contra uno chico, y lo acerté
+        const granLocal=EQUIPOS_GRANDES.includes(p.local);
+        const granVisit=EQUIPOS_GRANDES.includes(p.visitante);
+        if(granLocal && !granVisit && e.realL<=e.realV) conseguidos.add("matagigantes");
+        if(granVisit && !granLocal && e.realV<=e.realL) conseguidos.add("matagigantes");
+      } else {
+        rachaActual=0;
+      }
+    }
+  });
+
+  if(aciertos>=1) conseguidos.add("primer_acierto");
+  if(exactos>=1) conseguidos.add("exacto");
+  if(rachaMax>=3) conseguidos.add("racha3");
+  if(argCargados>=3) conseguidos.add("hincha");
+  if(porFecha[1]>=24||porFecha[2]>=24||porFecha[3]>=24) conseguidos.add("fecha_completa");
+  if(especiales.campeon) conseguidos.add("vidente");
+  if(cargados>=10) conseguidos.add("diez");
+
+  return conseguidos;
+}
+
+function renderLogros(){
+  const grid=document.getElementById('logros-grid');
+  const prog=document.getElementById('logros-progreso');
+  if(!grid||!prog) return;
+  const conseguidos=calcularLogros();
+  const total=LOGROS.length;
+  const hechos=conseguidos.size;
+  const pct=Math.round((hechos/total)*100);
+
+  prog.innerHTML=`
+    <div class="logros-barra-bg"><div class="logros-barra-fill" style="width:${pct}%"></div></div>
+    <div class="txt">${hechos} de ${total} logros desbloqueados</div>`;
+
+  grid.innerHTML='';
+  LOGROS.forEach(l=>{
+    const ok=conseguidos.has(l.id);
+    const card=document.createElement('div');
+    card.className='logro'+(ok?' desbloqueado':'');
+    card.innerHTML=`
+      <i class="ti ti-circle-check check"></i>
+      <div class="emoji">${l.emoji}</div>
+      <div class="l-tit">${l.titulo}</div>
+      <div class="l-desc">${l.desc}</div>`;
+    grid.appendChild(card);
+  });
 }
 
 renderBanner();
 renderFixture();
 renderElimina();
 initEspeciales();
+renderLogros();
 actualizarStats();
 renderRanking();
 
