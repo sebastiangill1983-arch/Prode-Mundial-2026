@@ -207,6 +207,12 @@
   @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
   .pts-tag{background:var(--bg);color:var(--dorado);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:4px;}
+  /* MARCADOR DUELO */
+  .marcador-duelo{display:flex;align-items:center;justify-content:space-around;gap:10px;margin:16px 0;}
+  .md-jug{text-align:center;flex:1;}
+  .md-nombre{font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:6px;word-break:break-word;}
+  .md-pts{font-size:38px;font-weight:800;color:var(--dorado);line-height:1;}
+  .md-vs{font-size:14px;font-weight:800;color:var(--txt3);}
   /* LOGROS */
   .logros-progreso{margin-bottom:18px;}
   .logros-barra-bg{background:var(--bg);border-radius:20px;height:12px;overflow:hidden;border:1px solid var(--linea);}
@@ -375,6 +381,7 @@
 
     <!-- VISTA DUELO -->
     <div class="vista" id="vista-duelo">
+      <div id="duelo-activo"></div>
       <div class="panel">
         <h2>Desafiá a un amigo</h2>
         <p class="psub">Creá un duelo, definí qué se juega el perdedor y mandá la invitación por WhatsApp. Sin plata: solo prendas y orgullo. 😎</p>
@@ -686,6 +693,7 @@ document.getElementById('btn-simular').addEventListener('click',()=>{
   PARTIDOS.forEach(p=>{if(cerrado(p)){estado[p.id].realL=Math.floor(Math.random()*4);estado[p.id].realV=Math.floor(Math.random()*4);hubo=true;}});
   if(!hubo){PARTIDOS.slice(0,12).forEach(p=>{estado[p.id].realL=Math.floor(Math.random()*4);estado[p.id].realV=Math.floor(Math.random()*4);});}
   renderFixture();actualizarStats();guardar();renderRanking();
+  if(sb){cargarRankingNube();renderDueloActivo();}
 });
 document.getElementById('btn-reset').addEventListener('click',()=>{
   if(!confirm('¿Seguro que querés borrar todas tus predicciones y resultados?'))return;
@@ -713,24 +721,45 @@ document.getElementById('btn-info').addEventListener('click',()=>{
 document.querySelectorAll('.chip').forEach(chip=>{
   chip.addEventListener('click',()=>{document.getElementById('prenda').value=chip.dataset.prenda;});
 });
-document.getElementById('btn-crear-duelo').addEventListener('click',()=>{
+document.getElementById('btn-crear-duelo').addEventListener('click',async ()=>{
   const yo=document.getElementById('tu-nombre').value.trim()||"Yo";
   const rival=document.getElementById('rival-nombre').value.trim();
   const prenda=document.getElementById('prenda').value.trim();
-  if(!rival){alert('Poné el nombre de tu rival 😉');return;}
-  if(!prenda){alert('Definí qué se juega el que pierde 🥩');return;}
-  const msg=`⚽ ¡Te desafío al Prode del Mundial 2026! ⚽\n\n${yo} vs ${rival}\n\n🏆 El que pierde: ${prenda}\n\nCargá tus pronósticos de cada partido y que gane el que más sabe. ¿Aceptás el duelo? 😎`;
+  if(!rival){alert('Poné el nombre de tu rival');return;}
+  if(!prenda){alert('Definí qué se juega el que pierde');return;}
+
+  let codigo=null;
+  // crear el duelo en la base de datos
+  if(sb && jugadorId){
+    try{
+      codigo=Math.random().toString(36).substring(2,8).toUpperCase();
+      await sb.from('duelos').insert({
+        codigo, prenda,
+        creador_id: jugadorId,
+        creador_nombre: yo,
+        rival_nombre: rival
+      });
+    }catch(err){
+      console.warn("No se pudo crear el duelo en la nube:", err.message||JSON.stringify(err));
+      codigo=null;
+    }
+  }
+
+  const baseUrl="https://sebastiangill1983-arch.github.io/Prode-Mundial-2026/";
+  const linkDuelo = codigo ? baseUrl+"?duelo="+codigo : baseUrl;
+  const msg=`Te desafio al Prode del Mundial 2026!\n\n${yo} vs ${rival}\n\nEl que pierde: ${prenda}\n\nEntra a este link, carga tus pronosticos y que gane el que mas sabe:\n${linkDuelo}`;
   const url="https://wa.me/?text="+encodeURIComponent(msg);
+
   const cont=document.getElementById('duelo-resultado');
   cont.innerHTML=`
     <div class="duelo-creado">
       <div class="vs-line">${yo} <span class="vs">VS</span> ${rival}</div>
-      <div class="prenda-box"><div class="et">El que pierde</div><div class="val">🏆 ${prenda}</div></div>
+      <div class="prenda-box"><div class="et">El que pierde</div><div class="val">${prenda}</div></div>
+      ${codigo?`<div style="text-align:center;font-size:12px;color:var(--txt2);margin-bottom:12px;">Código del duelo: <strong style="color:var(--dorado);letter-spacing:1px;">${codigo}</strong></div>`:''}
       <button class="btn btn-wa" id="btn-enviar-wa"><i class="ti ti-brand-whatsapp" style="font-size:18px"></i> Enviar invitación por WhatsApp</button>
-      <p style="font-size:11px;color:var(--txt3);text-align:center;margin-top:10px;">Se abrirá WhatsApp con el mensaje listo.</p>
+      <p style="font-size:11px;color:var(--txt3);text-align:center;margin-top:10px;">${codigo?'Tu rival se une al tocar el link. Después verás el marcador acá.':'Se abrirá WhatsApp con el mensaje listo.'}</p>
     </div>`;
   document.getElementById('btn-enviar-wa').addEventListener('click',()=>{window.open(url,'_blank');});
-  renderRanking();
 });
 
 // RANKING
@@ -1031,6 +1060,72 @@ function renderLogros(){
   });
 }
 
+// Detecta si entré por un link de duelo y me uno
+async function chequearDueloEnlace(){
+  if(!sb || !jugadorId) return;
+  const params=new URLSearchParams(window.location.search);
+  const codigo=params.get('duelo');
+  if(!codigo) return;
+  try{
+    // buscar el duelo
+    const {data:duelo,error}=await sb.from('duelos').select('*').eq('codigo',codigo).single();
+    if(error||!duelo) return;
+    // si soy el creador, no me uno como rival
+    if(duelo.creador_id!==jugadorId && !duelo.rival_id){
+      const miNombre=localStorage.getItem(STORAGE_KEY+"_nombre")||"Rival";
+      await sb.from('duelos').update({rival_id:jugadorId, rival_nombre:miNombre}).eq('codigo',codigo);
+    }
+    // guardar que estoy en este duelo
+    localStorage.setItem(STORAGE_KEY+"_duelo",codigo);
+  }catch(err){
+    console.warn("No se pudo unir al duelo:", err.message||JSON.stringify(err));
+  }
+}
+
+// Muestra el marcador del duelo activo en la pestaña Duelos
+async function renderDueloActivo(){
+  if(!sb || !jugadorId) return;
+  const codigo=localStorage.getItem(STORAGE_KEY+"_duelo");
+  if(!codigo) return;
+  try{
+    const {data:duelo}=await sb.from('duelos').select('*').eq('codigo',codigo).single();
+    if(!duelo) return;
+    // traer predicciones de ambos jugadores
+    const ids=[duelo.creador_id, duelo.rival_id].filter(Boolean);
+    const {data:preds}=await sb.from('predicciones').select('*').in('jugador_id',ids);
+
+    function puntosJugador(jid){
+      let pts=0;
+      (preds||[]).filter(pr=>pr.jugador_id===jid).forEach(pr=>{
+        const e=estado[pr.partido_id];
+        if(!e||e.realL===null) return;
+        if(pr.goles_local===e.realL && pr.goles_visitante===e.realV) pts+=5;
+        else if(Math.sign(pr.goles_local-pr.goles_visitante)===Math.sign(e.realL-e.realV)) pts+=2;
+      });
+      return pts;
+    }
+    const ptsCreador=puntosJugador(duelo.creador_id);
+    const ptsRival=duelo.rival_id?puntosJugador(duelo.rival_id):0;
+
+    const cont=document.getElementById('duelo-activo');
+    if(!cont) return;
+    const esperando=!duelo.rival_id;
+    cont.innerHTML=`
+      <div class="panel" style="border-color:var(--dorado);">
+        <h2>Tu duelo activo</h2>
+        <p class="psub">Se juega: <strong style="color:var(--dorado);">${duelo.prenda}</strong></p>
+        <div class="marcador-duelo">
+          <div class="md-jug"><div class="md-nombre">${duelo.creador_nombre}</div><div class="md-pts">${ptsCreador}</div></div>
+          <div class="md-vs">VS</div>
+          <div class="md-jug"><div class="md-nombre">${esperando?'Esperando...':duelo.rival_nombre}</div><div class="md-pts">${esperando?'-':ptsRival}</div></div>
+        </div>
+        ${esperando?'<p style="font-size:12px;color:var(--txt3);text-align:center;">Tu rival todavía no entró al link.</p>':`<p style="font-size:12px;color:var(--txt2);text-align:center;font-weight:600;">${ptsCreador===ptsRival?'¡Empate por ahora!':(ptsCreador>ptsRival?duelo.creador_nombre:duelo.rival_nombre)+' va ganando'}</p>`}
+      </div>`;
+  }catch(err){
+    console.warn("No se pudo cargar el duelo:", err.message||JSON.stringify(err));
+  }
+}
+
 renderBanner();
 renderFixture();
 renderElimina();
@@ -1042,7 +1137,9 @@ renderRanking();
 // arrancar la conexión con la nube
 (async ()=>{
   await iniciarJugador();
+  await chequearDueloEnlace();
   await cargarRankingNube();
+  await renderDueloActivo();
 })();
 
 if("serviceWorker" in navigator){
