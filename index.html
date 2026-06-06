@@ -106,6 +106,12 @@
   .partido.destacado .grupo-badge{background:var(--grad-dorado);color:#3a2c00;}
   .p-fecha{color:var(--txt3);font-size:10px;font-weight:500;}
   .p-fecha .ico{font-size:11px;vertical-align:-1px;}
+  .cierre{font-weight:700;}
+  .cierre-normal{color:var(--txt3);}
+  .cierre-pronto{color:var(--dorado);}
+  .cierre-urgente{color:var(--rosa);animation:parpadeo 1.5s ease-in-out infinite;}
+  .cierre-cerrado{color:var(--txt3);opacity:0.7;}
+  @keyframes parpadeo{0%,100%{opacity:1;}50%{opacity:0.55;}}
   .candado{color:var(--rosa);font-weight:600;}
   .p-mid{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;}
   .equipo{text-align:center;}
@@ -633,6 +639,26 @@ function fmtFecha(d){
   return s.charAt(0).toUpperCase()+s.slice(1);
 }
 function cerrado(p){return new Date()>=estado[p.id].deadline;}
+
+// Devuelve el estado de cierre de un partido con texto y nivel de urgencia
+function estadoCierre(p){
+  const ahora=new Date();
+  const deadline=estado[p.id].deadline;
+  const msFalta=deadline-ahora;
+  if(msFalta<=0) return {nivel:'cerrado', txt:'Cerrado'};
+  const min=Math.floor(msFalta/60000);
+  const horas=Math.floor(min/60);
+  const dias=Math.floor(horas/24);
+  let txt;
+  if(dias>=1) txt='Cierra en '+dias+(dias===1?' día':' días');
+  else if(horas>=1) txt='Cierra en '+horas+'h '+(min%60)+'m';
+  else txt='¡Cierra en '+min+' min!';
+  // nivel de urgencia: urgente si falta menos de 1 hora, pronto si menos de 3 horas
+  let nivel='normal';
+  if(min<60) nivel='urgente';
+  else if(min<180) nivel='pronto';
+  return {nivel, txt};
+}
 function puntosDe(e){
   if(e.realL===null||e.predL===""||e.predV==="")return null;
   const pl=+e.predL,pv=+e.predV;
@@ -683,6 +709,7 @@ function renderFixture(){
     }
     const e=estado[p.id];
     const cerr=cerrado(p);
+    const ec=estadoCierre(p);
     const jugado=e.realL!==null;
     const pj=puntosDe(e);
     const card=document.createElement('div');
@@ -696,7 +723,7 @@ function renderFixture(){
     card.innerHTML=`
       <div class="p-top">
         <span class="grupo-badge">GRUPO ${p.grupo}</span>
-        <span class="p-fecha">${cerr?'<span class="candado"><i class="ti ti-lock ico"></i> Cerrado</span> · ':''}<i class="ti ti-clock ico"></i> ${fmtFecha(e.inicio)} hs</span>
+        <span class="p-fecha"><span class="cierre cierre-${ec.nivel}">${ec.nivel==='cerrado'?'<i class="ti ti-lock ico"></i>':'<i class="ti ti-clock-hour-4 ico"></i>'} ${ec.txt}</span> · ${fmtFecha(e.inicio)} hs</span>
       </div>
       <div class="p-mid">
         <div class="equipo"><img class="bandera" src="${flagUrl(p.local)}" alt="${p.local}" loading="lazy"><div class="nombre">${p.local}</div></div>
@@ -1204,6 +1231,9 @@ if("serviceWorker" in navigator){
     navigator.serviceWorker.register("sw.js").catch(()=>{});
   });
 }
+
+// Actualizar la cuenta regresiva cada minuto
+setInterval(()=>{ if(document.getElementById('vista-fixture').classList.contains('activa')) renderFixture(); }, 60000);
 </script>
 </body>
 </html>
