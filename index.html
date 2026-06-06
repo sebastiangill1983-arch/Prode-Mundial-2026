@@ -273,6 +273,23 @@
   .llave-mult{font-size:10px;font-weight:700;color:var(--dorado);background:var(--bg);padding:3px 9px;border-radius:8px;white-space:nowrap;}
   .esp-ok{background:rgba(0,224,164,0.12);border:1px solid var(--verde);border-radius:var(--radio-sm);padding:12px;margin-top:14px;text-align:center;color:var(--verde);font-size:13px;font-weight:600;}
   .btn-compartir{background:var(--bg2);color:var(--txt);border:1px solid var(--linea);margin-top:10px;}
+  /* BIENVENIDA */
+  .bienvenida-overlay{position:fixed;inset:0;background:rgba(10,14,30,0.92);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .bienvenida-card{background:var(--bg2);border:1px solid var(--linea);border-radius:18px;padding:28px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 12px 50px rgba(0,0,0,0.5);}
+  .bv-emblema{margin-bottom:14px;}
+  .bv-titulo{font-size:20px;font-weight:700;margin-bottom:6px;color:var(--txt);}
+  .bv-sub{font-size:13px;color:var(--txt2);margin-bottom:22px;line-height:1.5;}
+  .bv-pasos{text-align:left;margin-bottom:22px;display:flex;flex-direction:column;gap:14px;}
+  .bv-paso{display:flex;gap:12px;align-items:flex-start;font-size:13px;color:var(--txt2);line-height:1.45;}
+  .bv-paso strong{color:var(--txt);}
+  .bv-num{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--grad-dorado);color:#3a2c00;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;}
+  /* MODO PRUEBA */
+  .modo-prueba{margin-top:16px;border:1px dashed var(--linea);border-radius:var(--radio);padding:0;}
+  .modo-prueba summary{cursor:pointer;padding:12px 14px;font-size:13px;font-weight:600;color:var(--txt3);list-style:none;}
+  .modo-prueba summary::-webkit-details-marker{display:none;}
+  .modo-prueba[open] summary{border-bottom:1px dashed var(--linea);}
+  .mp-aclara{font-size:12px;color:var(--txt3);line-height:1.5;padding:12px 14px 8px;margin:0;}
+  .modo-prueba .controles{padding:0 14px 14px;margin:0;}
 
   @media(min-width:480px){
     .equipo .bandera{width:68px;height:45px;}
@@ -283,6 +300,28 @@
 </head>
 <body>
 <div class="wrap">
+
+  <div id="bienvenida" class="bienvenida-overlay" style="display:none;">
+    <div class="bienvenida-card">
+      <div class="bv-emblema">
+        <svg viewBox="0 0 60 60" width="56" height="56" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="56" height="56" rx="15" fill="#1e2750"/>
+          <path d="M22 13 L38 13 L36 27 Q30 35 24 27 Z" fill="#ffd34e"/>
+          <rect x="27.5" y="34" width="5" height="9" fill="#ffd34e"/>
+          <rect x="22" y="43" width="16" height="4" rx="1.5" fill="#ffd34e"/>
+          <rect x="20" y="47" width="20" height="3.5" rx="1.5" fill="#00e0a4"/>
+        </svg>
+      </div>
+      <h2 class="bv-titulo">¡Bienvenido al Prode Mundial 2026!</h2>
+      <p class="bv-sub">Pronosticá los partidos, sumá puntos y desafiá a tus amigos.</p>
+      <div class="bv-pasos">
+        <div class="bv-paso"><span class="bv-num">1</span><div><strong>Cargá tus pronósticos</strong><br>Poné el resultado de cada partido antes de que empiece.</div></div>
+        <div class="bv-paso"><span class="bv-num">2</span><div><strong>Sumá puntos</strong><br>Resultado exacto = 5 pts · Acertar el ganador = 2 pts.</div></div>
+        <div class="bv-paso"><span class="bv-num">3</span><div><strong>Desafiá amigos</strong><br>Creá un duelo, jugate una prenda y compartí por WhatsApp.</div></div>
+      </div>
+      <button class="btn btn-grad" id="btn-empezar">¡Empezar a jugar!</button>
+    </div>
+  </div>
 
   <header>
     <div class="header-top">
@@ -329,11 +368,15 @@
         </select>
       </div>
       <div id="lista-partidos"></div>
-      <div class="controles" style="margin-top:14px;">
-        <button class="btn btn-sec" id="btn-simular" style="flex:1;"><i class="ti ti-dice-5"></i> Simular</button>
-        <button class="btn btn-sec" id="btn-reset" style="flex:1;"><i class="ti ti-refresh"></i> Reiniciar</button>
-      </div>
-      <button class="btn btn-compartir" id="btn-compartir" style="margin-top:10px;"><i class="ti ti-brand-whatsapp" style="font-size:18px"></i> Compartir mi prode</button>
+      <button class="btn btn-compartir" id="btn-compartir" style="margin-top:16px;"><i class="ti ti-brand-whatsapp" style="font-size:18px"></i> Compartir mi prode</button>
+      <details class="modo-prueba">
+        <summary><i class="ti ti-flask" style="vertical-align:-2px;"></i> Modo prueba (para experimentar)</summary>
+        <p class="mp-aclara">Estos botones son para probar la app antes de que arranque el Mundial. "Simular" inventa resultados al azar para que veas cómo se calculan los puntos. ¡No son resultados reales!</p>
+        <div class="controles">
+          <button class="btn btn-sec" id="btn-simular" style="flex:1;"><i class="ti ti-dice-5"></i> Simular</button>
+          <button class="btn btn-sec" id="btn-reset" style="flex:1;"><i class="ti ti-refresh"></i> Reiniciar</button>
+        </div>
+      </details>
     </div>
 
     <!-- VISTA ELIMINATORIAS -->
@@ -915,7 +958,7 @@ async function iniciarJugador(){
     return;
   }
   // pedir nombre la primera vez
-  let nombre = prompt("¡Bienvenido al Prode Mundial 2026! 🏆\n\n¿Con qué nombre querés jugar? (lo verán tus rivales en la tabla)");
+  let nombre = prompt("¿Con qué nombre querés jugar? (lo verán tus rivales en la tabla)");
   if(!nombre || !nombre.trim()){ nombre = "Jugador anónimo"; }
   nombre = nombre.trim().slice(0,30);
 
@@ -1135,12 +1178,26 @@ actualizarStats();
 renderRanking();
 
 // arrancar la conexión con la nube
-(async ()=>{
+async function arrancarApp(){
   await iniciarJugador();
   await chequearDueloEnlace();
   await cargarRankingNube();
   await renderDueloActivo();
-})();
+}
+
+// Mostrar bienvenida solo la primera vez
+const yaVioBienvenida = localStorage.getItem(STORAGE_KEY+"_bienvenida");
+const yaRegistrado = localStorage.getItem(STORAGE_KEY+"_nombre");
+if(!yaVioBienvenida && !yaRegistrado){
+  document.getElementById('bienvenida').style.display='flex';
+  document.getElementById('btn-empezar').addEventListener('click',()=>{
+    document.getElementById('bienvenida').style.display='none';
+    localStorage.setItem(STORAGE_KEY+"_bienvenida","1");
+    arrancarApp();
+  });
+} else {
+  arrancarApp();
+}
 
 if("serviceWorker" in navigator){
   window.addEventListener("load",()=>{
