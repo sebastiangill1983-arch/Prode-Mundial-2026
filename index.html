@@ -990,6 +990,17 @@ async function iniciarJugador(){
   nombre = nombre.trim().slice(0,30);
 
   try{
+    // primero: ¿ya existe un jugador con ese nombre? Si sí, lo reutilizo (evita duplicados)
+    const {data:existentes} = await sb.from('jugadores').select('id,nombre').ilike('nombre', nombre);
+    if(existentes && existentes.length>0){
+      jugadorId = existentes[0].id;
+      localStorage.setItem(STORAGE_KEY+"_jid", jugadorId);
+      localStorage.setItem(STORAGE_KEY+"_nombre", nombre);
+      const inp=document.getElementById('tu-nombre');
+      if(inp) inp.value=nombre;
+      return;
+    }
+    // si no existe, lo creo
     const {data,error} = await sb.from('jugadores').insert({nombre}).select().single();
     if(error) throw error;
     jugadorId = data.id;
